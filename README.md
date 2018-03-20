@@ -1,6 +1,6 @@
 # 1 Introduction
 
-The repository folder contains CTL benchmark files for model checker [Verds](http://lcs.ios.ac.cn/~zwh/verds/index.html), [NuSMV](http://nusmv.fbk.eu/), [NuXMV](https://nuxmv.fbk.eu/), theorem prover [iProver Modulo](http://www.ensiie.fr/~guillaume.burel/blackandwhite_iProverModulo.html.en), and our tool [SCTLProV](https://github.com/terminatorlxj/SCTLProV). The benchmarks consists of two set of programs: randomly generated boolean program, and fairness programs.
+The repository contains CTL benchmark files for model checker [Verds](http://lcs.ios.ac.cn/~zwh/verds/index.html), [NuSMV](http://nusmv.fbk.eu/), [NuXMV](https://nuxmv.fbk.eu/), theorem prover [iProver Modulo](http://www.ensiie.fr/~guillaume.burel/blackandwhite_iProverModulo.html.en), and our tool [SCTLProV](https://github.com/terminatorlxj/SCTLProV). The benchmarks consists of two set of programs: randomly generated boolean program, and fairness programs.
 
 ## 1.1 Randomly generated programs
 Benchmark #1, #2, and #3 are all randomly generated programs. 
