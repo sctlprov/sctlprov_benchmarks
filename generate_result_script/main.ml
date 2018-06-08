@@ -51,7 +51,7 @@ let main () =
 			"-extra-last", Arg.Unit (fun () -> extra_last := true), "\tPut extra argument(s) at last"
     ]
     (fun s -> printf "Unknown argument: %s\n" s; exit 1)
-		"Usage: ocaml run.ml -exec <command> -timeout <timeout> -dir <targetdir> -surfix <surfix> -extra <filename>";
+		"Usage: run -exec <command> -timeout <timeout> -dir <targetdir> -surfix <surfix> -extra <filename>";
 	let timeout_secs = float_of_int (calculate_timeout !timeout) in
   let extra_arguments = 
     try
@@ -87,6 +87,7 @@ let main () =
         end;
 				(* print_endline ("command: "^ !new_command); *)
 				print_endline ("************************"^file^"*************************");
+				print_endline(!new_command);
 				ignore(Sys.command !new_command);
 				begin
 					let flag = ref true in

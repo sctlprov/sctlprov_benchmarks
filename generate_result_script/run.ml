@@ -74,7 +74,7 @@ let run () =
           else
             new_command := "/usr/bin/time -v -a -o "^result_file ^" "^ !command ^ !timeout ^ " " ^ exec_name ^ " " ^ extra_arguments ^ " " ^ !new_dir ^ file
         end;
-        (* print_endline ("command: "^ !new_command); *)
+        print_endline ("command: "^ !new_command);
         ignore(Sys.command !new_command);
         Sys.chdir current_dir
       end
