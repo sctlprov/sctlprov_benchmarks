@@ -19,10 +19,12 @@ let calculate_timeout tmot =
 		(* failwith "not a valid timeout" *)
 
 let main () = 
+	let result = Hashtbl.create 10 in
+	let correct = Hashtbl.create 10 in
 	let mode = ref "timememory" in
   let current_dir = Sys.getcwd () in
   let tm = localtime (time ()) in
-  let result_file = (Sys.getcwd ())^"/result_"^
+  let result_file = (Sys.getcwd ())^"/results/result_"^
                     (string_of_int (tm.tm_year+1900))^"-"^
                     (string_of_int tm.tm_mon)^"-"^
                     (string_of_int tm.tm_mday)^"-"^
@@ -37,6 +39,7 @@ let main () =
   let surfix = ref "" in
 	let command = ref " timeout " in
 	let extra_last = ref false in
+	let standard = ref "" in
   (* if !mode = "time" then
     command := "time -a -o "^result_file^" timeout "
   else 
@@ -48,10 +51,21 @@ let main () =
       "-dir", Arg.String (fun s -> dir := s), "\tTarget directory of the test cases";
       "-surfix", Arg.String (fun s -> surfix := s), "\tSurfix of the test cases";
 			"-extra", Arg.String (fun s -> extra := s), "\tExtra argument(s)";
-			"-extra-last", Arg.Unit (fun () -> extra_last := true), "\tPut extra argument(s) at last"
+			"-extra-last", Arg.Unit (fun () -> extra_last := true), "\tPut extra argument(s) at last";
+			"-standard", Arg.String (fun s -> standard := s), "\tStandard answers of test cases"
     ]
     (fun s -> printf "Unknown argument: %s\n" s; exit 1)
-		"Usage: run -exec <command> -timeout <timeout> -dir <targetdir> -surfix <surfix> -extra <filename>";
+		"Usage: run -exec <command> -timeout <timeout> -dir <targetdir> -surfix <surfix> -extra <filename> -standard <filename> [-extra-last]";
+	(* read the standard answer from file*)
+	let standard_in = open_in !standard in
+	try while true do
+		let s = input_line standard_in in
+		let ss = String.split_on_char ':' s in
+		let mname = String.trim (List.hd ss)
+		and manswer = bool_of_string (String.trim (List.nth ss 1)) in
+		Hashtbl.add correct mname manswer
+	done with _ -> ();
+	(* calculate the timeout seconds*)
 	let timeout_secs = float_of_int (calculate_timeout !timeout) in
   let extra_arguments = 
     try
@@ -87,18 +101,37 @@ let main () =
         end;
 				(* print_endline ("command: "^ !new_command); *)
 				print_endline ("************************"^file^"*************************");
-				print_endline(!new_command);
+				(* print_endline(!new_command); *)
 				ignore(Sys.command !new_command);
 				begin
 					let flag = ref true in
 					try 
 						let tmp_res = open_in (current_dir^"/test.out") in
 						let error_regexps = ["exception encountered"; "Terminated"; "terminated by a signal"; "Fatal error"] in
+						(* let solvable_regexps = [""] in *)
 						while !flag do
 							let s = input_line tmp_res in
+							(* When a test is not solvable *)
 							if List.fold_left (fun b e -> if not b then Str.string_match (Str.regexp e) s 0 else b) false error_regexps then begin
 								error_cases := file :: !error_cases;
 								flag := false
+							end else begin (* when a test case is solvable *)
+								let sctltrue = Str.regexp ".*: true"
+								and sctlfalse = Str.regexp ".*: false"
+								and verdstrue = Str.regexp "CONCLUSION: TRUE"
+								and verdsfalse = Str.regexp "CONCLUSION: FALSE"
+								and smvtrue = Str.regexp "-- specification.* is true"
+								and smvfalse = Str.regexp "-- specification.* is false" 
+								and cadptrue = Str.regexp "TRUE"
+								and cadpfalse = Str.regexp "FALSE" in
+								let mname = List.hd (String.split_on_char '.' file) in
+								if Str.string_match sctltrue s 0 || Str.string_match verdstrue s 0 || Str.string_match smvtrue s 0 || (!surfix = "bcg" && (Str.string_match cadptrue s 0)) then begin
+									Hashtbl.add result mname true;
+									flag := false
+								end else if Str.string_match sctlfalse s 0 || Str.string_match verdsfalse s 0 || Str.string_match smvfalse s 0 || (!surfix = "bcg" && (Str.string_match cadpfalse s 0)) then begin
+									Hashtbl.add result mname false;
+									flag := false
+								end
 							end
 						done
 					with _ -> flag := false
@@ -115,14 +148,29 @@ let main () =
 		(* let out = open_out (filename^"_time_list") in
 		List.iter (fun a -> output_string out ((string_of_float a)^"\n")) time_list; *)
 		let out = open_out (result_file^"_data") in
-		output_string out "Filename\t\tTime(s)\t\tMemory(MB)\n";
+		(* output_string out "Filename\t\tStatus\t\tTime(s)\t\tMemory(MB)\n"; *)
 		let index = ref 0 in
 		List.iter (fun r -> 
 			let file = (List.nth !file_list (!index)) in
 			output_string out file; 
+			(*output the status of test case*)
+			if Hashtbl.length result <> 0 then begin
+				if List.exists (fun f -> f=file) !error_cases || r.clock_time >= timeout_secs then
+						output_string out "\t\tNotSolvable"
+				else begin
+					let mname = List.hd (String.split_on_char '.' file) in
+					if (Hashtbl.mem result mname) && (Hashtbl.find result mname) = (Hashtbl.find correct mname) then
+						output_string out "\t\tPass       "
+					else if (Hashtbl.mem result mname) && (Hashtbl.find result mname) <> (Hashtbl.find correct mname) then
+						output_string out "\t\tNotPass    "
+					else 
+						output_string out "\t\tNoAnswer   "
+				end
+			end;
+			(*output time usage*)
 			output_string out "\t\tTime: "; 
 			begin
-				if List.exists (fun f -> f=file) !error_cases || r.clock_time > timeout_secs then
+				if List.exists (fun f -> f=file) !error_cases || r.clock_time >= timeout_secs then
 					output_string out "-"
 				else 
 					output_string out (string_of_float r.clock_time)
@@ -130,7 +178,7 @@ let main () =
 			(* output_string out " s"; *)
 			output_string out "\t\tMemory: "; 
 			begin
-				if List.exists (fun f -> f=file) !error_cases || r.clock_time > timeout_secs then
+				if List.exists (fun f -> f=file) !error_cases || r.clock_time >= timeout_secs then
 					output_string out "-"
 				else 
 				output_string out (string_of_float ((float_of_int r.max_res_size)/.1024.0))
