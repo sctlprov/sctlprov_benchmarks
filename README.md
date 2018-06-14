@@ -35,7 +35,7 @@ The OCaml programs to generate the fairness programs are in folder `fairness_pro
 1. `generate_mutual.ml`: for mutual exclusion algorithms;
 2. `generate_ring.ml`: for ring algorithms.
 
-# 3 Run these examples
+# 3 Test these examples
 
 ## 3.1 Run test cases one-by-one
 
@@ -63,7 +63,7 @@ The OCaml programs to generate the fairness programs are in folder `fairness_pro
    iproveropt  \`cat basic_resolution_options\`  --modulo true --res_passive_queue_flag false --res_lit_sel ctl_sel  \<filename\>
 
 
-## 3.2 Running script 
+## 3.2 Testing script 
 
 As there are so many test cases in each benchmark, we wrote a script (also in OCaml) that can run many test cases and generated the results at once. The script is in the folder `generate_result_script`.
 
@@ -75,7 +75,7 @@ As there are so many test cases in each benchmark, we wrote a script (also in OC
 
 **Usage of the executable file`run`:**
 
-   `run -exec <command> -timeout <tmot> -dir <targetdir> -surfix <sfx> [-extra <filename>]`
+   `run -exec <command> -timeout <tmot> -dir <targetdir> -surfix <sfx> [-extra <filename>] [-extra-last] -standard <filename>`
 
    Each argument of the command is explained as follows:
 
@@ -91,27 +91,44 @@ As there are so many test cases in each benchmark, we wrote a script (also in OC
 
  5. `-extra <filename>`: This argument is optional, which specifies the extra arguments of the provers or model checkers. Extra arguments are in the file `filename` which is in text format. For instance, to evaluate test cases in NuSMV, the extra argument `-dcx` is specifies in order to improve efficiency. In this case, we put `-dcx` as the first line in the file `nusmv_extra`, and when running NuSMV using the script, we use `-extra nusmv_extra` as an argument of the script. 
 
+ 6. `-extra-last`: Put the extra argument(s) at last.
+ 
+ 7. `-standard <filename>`: Specifies the file containing the standard answers for test cases. 
+
 **Complete examples：**
 
 - SCTLProV: 
 
-  `run -exec /home/jian/SCTLProV/sctl -timeout 20m -dir /home/jian/benchmark1/p1/p01/sctl/ -surfix model `
+  `run -exec /home/jian/SCTLProV/sctl -timeout 20m -dir /home/jian/benchmark1/p1/p01/sctl/ -surfix model -standard ./answers/cp_answer`
 
 - Verds:
 
-  `run -exec /home/jian/verds/verds -timeout 20m -dir /home/jian/benchmark1/p1/p01/verds/ -surfix vvm -extra verds_extra`
+  `run -exec /home/jian/verds/verds -timeout 20m -dir /home/jian/benchmark1/p1/p01/verds/ -surfix vvm -extra ./extras/verds_extra -standard ./answers/cp_answer`
 
 - iProver Modulo:
 
-  `run -exec /home/jian/iprover/iproveropt -timeout 20m -dir /home/jian/benchmark1/p1/p01/iprover/ -surfix p -extra iprover_extra`
+  `run -exec /home/jian/iprover/iproveropt -timeout 20m -dir /home/jian/benchmark1/p1/p01/iprover/ -surfix p -extra ./extras/iprover_extra -standard ./answers/cp_answer`
 
 - NuSMV/NuXMV:
 
-  `run -exec /home/jian/nusmv/bin/NuSMV -timeout 20m -dir /home/jian/benchmark1/p1/p01/smv/ -surfix smv -extra nusmv_extra`
+  `run -exec /home/jian/nusmv/bin/NuSMV -timeout 20m -dir /home/jian/benchmark1/p1/p01/smv/ -surfix smv -extra ./extras/nusmv_extra -standard ./answers/cp_answer`
 
-**Result:**
+**How to read the result file:**
 
 The experimental results is in the auto-generated file `result_<timestamp>` and `result_<timestamp>_data`.
+Each line in the file `result_<timestamp>_data` has the form:
+
+```
+<filename> <status> Time:<time> Memory:<memory>
+```
+
+* `status`: may be one of the following options: 
+    - `NotSolvable`: the test case is not solvable, due to either timeout or out of memory;
+    - `Pass`: result of the test case is equal to the standard answer;
+    - `NotPass`: result of the test case is NOT equal to the standard answer, which indicates an failure;
+    - `NoAnswer`: cannot find the standard answer of the test case.
+* `time`: in seconds.
+* `memory`: in MB.
 
 **Note:**
 
