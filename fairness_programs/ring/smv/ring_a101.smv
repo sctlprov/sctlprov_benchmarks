@@ -21,12 +21,12 @@ VAR
   r5 : boolean;
   output : boolean;
 ASSIGN
-  init(r1) := 0;
-  init(r2) := 0;
-  init(r3) := 0;
-  init(r4) := 0;
-  init(r5) := 0;
-  init(output) := 0;
+  init(r1) := FALSE;
+  init(r2) := FALSE;
+  init(r3) := FALSE;
+  init(r4) := FALSE;
+  init(r5) := FALSE;
+  init(output) := FALSE;
   next(r1) := !input;
   next(r2) := !r1;
   next(r3) := !r2;

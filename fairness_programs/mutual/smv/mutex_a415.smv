@@ -103,12 +103,12 @@ case
    (state0 = trying) & (state1 = noncritical): critical;
    (state0 = trying) & (state1 = trying) & (turn = turn0):  critical;
    (state0 = critical) : {critical,noncritical};
-   1: state0;
+   TRUE: state0;
 esac;
 next(turn) :=
 case
    turn = turn0 & state0 = noncritical: turn1;
-   1: turn;
+   TRUE: turn;
 esac;
 FAIRNESS
 running
