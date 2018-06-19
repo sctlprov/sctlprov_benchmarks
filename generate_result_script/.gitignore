@@ -1,6 +1,0 @@
-*.sh
-results/*
-*.cmi
-*.cmo
-*.o
-run
